@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Файлы сервера</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="layout">
+    <!-- Левая колонка: три блока -->
+    <div class="col col-left">
+      <div class="section-title">Файлы на сервере</div>
+
+      <h2>Корень сервера</h2>
+      <ul id="root-files" class="file-list"></ul>
+      <div class="empty" id="root-empty" style="display:none;">Нет файлов.</div>
+
+      <div class="spacer"></div>
+
+      <h2>Папка uploads</h2>
+      <ul id="upload-files" class="file-list"></ul>
+      <div class="empty" id="upload-empty" style="display:none;">Нет файлов.</div>
+
+      <div class="spacer"></div>
+
+      <div id="extra-block" style="display:none;">
+        <h2>Указанная папка</h2>
+        <div class="extra-path" id="extra-path-label"></div>
+        <ul id="extra-files" class="file-list"></ul>
+        <div class="empty" id="extra-empty" style="display:none;">Нет файлов.</div>
+      </div>
+    </div>
+
+    <!-- Правая колонка: загрузка -->
+    <div class="col col-right">
+      <div class="section-title">Загрузка</div>
+      <h2>Добавить файлы</h2>
+
+      <form id="upload-form">
+        <label id="dropzone" class="dropzone">
+          <div class="drop-main">Перетащи файлы сюда</div>
+          <div class="drop-sub">или нажми, чтобы выбрать с диска</div>
+          <input id="file-input" class="file-input" type="file" multiple />
+        </label>
+        <div id="selected" class="selected-list" style="display:none;"></div>
+
+        <div class="hint">
+          Файлы будут отправлены в ./uploads. При совпадении имён к ним добавится номер в скобках.
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn btn-secondary" id="clear-btn">Очистить</button>
+          <button type="submit" class="btn btn-primary">Загрузить</button>
+        </div>
+
+        <div id="status" class="status"></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+    const selectedBox = document.getElementById('selected');
+    const statusBox = document.getElementById('status');
+    const clearBtn = document.getElementById('clear-btn');
+    const extraBlock = document.getElementById('extra-block');
+    const extraPathLabel = document.getElementById('extra-path-label');
+
+    let pendingFiles = [];
+
+    function renderSelected() {
+      selectedBox.innerHTML = '';
+      if (!pendingFiles.length) {
+        selectedBox.style.display = 'none';
+        return;
+      }
+      pendingFiles.forEach((f) => {
+        const div = document.createElement('div');
+        div.className = 'selected-item';
+        div.textContent = f.name + ' (' + f.size + ' байт)';
+        selectedBox.appendChild(div);
+      });
+      selectedBox.style.display = 'block';
+    }
+
+    dropzone.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', (e) => {
+      pendingFiles = [...pendingFiles, ...Array.from(e.target.files)];
+      renderSelected();
+      statusBox.textContent = '';
+      fileInput.value = '';
+    });
+
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if (e.dataTransfer.files && e.dataTransfer.files.length) {
+        pendingFiles = [...pendingFiles, ...Array.from(e.dataTransfer.files)];
+        renderSelected();
+        statusBox.textContent = '';
+      }
+    });
+
+    clearBtn.addEventListener('click', () => {
+      pendingFiles = [];
+      renderSelected();
+      statusBox.textContent = 'Очередь очищена.';
+    });
+
+    document.getElementById('upload-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!pendingFiles.length) {
+        statusBox.textContent = 'Нет файлов для загрузки.';
+        return;
+      }
+      const formData = new FormData();
+      pendingFiles.forEach((f) => formData.append('files', f));
+      statusBox.textContent = 'Загружаем...';
+
+      try {
+        const resp = await fetch('/upload', { method: 'POST', body: formData });
+        if (!resp.ok) throw new Error('upload failed');
+        const data = await resp.json();
+        statusBox.textContent = data.message || 'Готово.';
+        pendingFiles = [];
+        renderSelected();
+        loadFileLists();
+      } catch (err) {
+        statusBox.textContent = 'Ошибка при загрузке.';
+      }
+    });
+
+    async function loadFileLists() {
+      try {
+        const resp = await fetch('/list');
+        if (!resp.ok) throw new Error();
+        const data = await resp.json();
+
+        renderList('root-files', 'root-empty', data.root || []);
+        renderList('upload-files', 'upload-empty', data.uploads || []);
+
+        if (data.extra_path) {
+          extraBlock.style.display = 'block';
+          extraPathLabel.textContent = data.extra_path;
+          renderList('extra-files', 'extra-empty', data.extra || []);
+        } else {
+          extraBlock.style.display = 'none';
+        }
+      } catch (e) {
+        statusBox.textContent = 'Не удалось получить список файлов.';
+      }
+    }
+
+    function renderList(listId, emptyId, items) {
+      const ul = document.getElementById(listId);
+      const empty = document.getElementById(emptyId);
+      ul.innerHTML = '';
+      if (!items.length) {
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+      items.forEach((f) => {
+        const li = document.createElement('li');
+        li.className = 'file-item';
+        const a = document.createElement('a');
+        a.href = f.url;
+        a.textContent = f.name;
+        const size = document.createElement('span');
+        size.className = 'file-size';
+        size.textContent = f.size ? f.size + ' байт' : '';
+        li.appendChild(a);
+        li.appendChild(size);
+        ul.appendChild(li);
+      });
+    }
+
+    loadFileLists();
+  </script>
+</body>
+</html>
+
