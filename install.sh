@@ -8,7 +8,7 @@ INSTALL_DIR="$HOME/.local/bin"
 
 git clone https://github.com/NRTLOX/fileserver.git "$REPO_DIR" 2>/dev/null || (cd "$REPO_DIR" && git pull)
 cd "$REPO_DIR"
-
+mkdir uploads
 chmod +x pythonserver.py
 
 cat > fileserver << 'EOF'
