@@ -1,174 +1,146 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>Файлы сервера</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <title>File Manager</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="layout">
-    <!-- Левая колонка: три блока -->
+<div class="layout">
     <div class="col col-left">
-      <div class="section-title">Файлы на сервере</div>
+        <div class="server-lists">
+            <div class="server-block">
+                <div class="section-title"></div>
+                <h2>Root</h2>
+                <ul id="root-files" class="file-list"></ul>
+                <div class="empty" id="root-empty" style="display:none;">Пусто</div>
+            </div>
 
-      <h2>Корень сервера</h2>
-      <ul id="root-files" class="file-list"></ul>
-      <div class="empty" id="root-empty" style="display:none;">Нет файлов.</div>
+            <div class="server-block">
+                <h2>uploads</h2>
+                <ul id="upload-files" class="file-list"></ul>
+                <div class="empty" id="upload-empty" style="display:none;">Пусто</div>
+            </div>
 
-      <div class="spacer"></div>
-
-      <h2>Папка uploads</h2>
-      <ul id="upload-files" class="file-list"></ul>
-      <div class="empty" id="upload-empty" style="display:none;">Нет файлов.</div>
-
-      <div class="spacer"></div>
-
-      <div id="extra-block" style="display:none;">
-        <h2>Указанная папка</h2>
-        <div class="extra-path" id="extra-path-label"></div>
-        <ul id="extra-files" class="file-list"></ul>
-        <div class="empty" id="extra-empty" style="display:none;">Нет файлов.</div>
-      </div>
+            <div id="extra-block" class="server-block" style="display:none;">
+                <h2>Extra</h2>
+                <div class="extra-path" id="extra-path-label"></div>
+                <ul id="extra-files" class="file-list"></ul>
+                <div class="empty" id="extra-empty" style="display:none;">Пусто</div>
+            </div>
+        </div>
     </div>
 
-    <!-- Правая колонка: загрузка -->
     <div class="col col-right">
-      <div class="section-title">Загрузка</div>
-      <h2>Добавить файлы</h2>
-
-      <form id="upload-form">
-        <label id="dropzone" class="dropzone">
-          <div class="drop-main">Перетащи файлы сюда</div>
-          <div class="drop-sub">или нажми, чтобы выбрать с диска</div>
-          <input id="file-input" class="file-input" type="file" multiple />
-        </label>
-        <div id="selected" class="selected-list" style="display:none;"></div>
-
-        <div class="hint">
-          Файлы будут отправлены в ./uploads. При совпадении имён к ним добавится номер в скобках.
-        </div>
-
-        <div class="actions">
-          <button type="button" class="btn btn-secondary" id="clear-btn">Очистить</button>
-          <button type="submit" class="btn btn-primary">Загрузить</button>
-        </div>
-
-        <div id="status" class="status"></div>
-      </form>
+        <div class="section-title"></div>
+        <h2>Загрузка</h2>
+        <form id="upload-form" class="upload-form">
+            <label id="dropzone" class="dropzone">
+                <div class="drop-main">Перетащите файлы сюда или кликните</div>
+                <div class="drop-sub">Поддерживается множественная загрузка</div>
+                <input id="file-input" class="file-input" type="file" multiple>
+            </label>
+            <div id="selected" class="selected-list" style="display:none;"></div>
+            <div class="hint">.uploads/</div>
+            <div class="actions">
+                <button type="button" class="btn btn-secondary" id="clear-btn">Очистить</button>
+                <button type="submit" class="btn btn-primary">Загрузить</button>
+            </div>
+            <div id="status" class="status"></div>
+        </form>
     </div>
-  </div>
+</div>
 
-  <script>
-    const dropzone = document.getElementById('dropzone');
-    const fileInput = document.getElementById('file-input');
-    const selectedBox = document.getElementById('selected');
-    const statusBox = document.getElementById('status');
-    const clearBtn = document.getElementById('clear-btn');
-    const extraBlock = document.getElementById('extra-block');
-    const extraPathLabel = document.getElementById('extra-path-label');
+<script>
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+const selectedBox = document.getElementById('selected');
+const statusBox = document.getElementById('status');
+const clearBtn = document.getElementById('clear-btn');
+const extraBlock = document.getElementById('extra-block');
+const extraPathLabel = document.getElementById('extra-path-label');
 
-    let pendingFiles = [];
+let pendingFiles = [];
 
-    function renderSelected() {
-      selectedBox.innerHTML = '';
-      if (!pendingFiles.length) {
+function renderSelected() {
+    selectedBox.innerHTML = '';
+    if (!pendingFiles.length) {
         selectedBox.style.display = 'none';
         return;
-      }
-      pendingFiles.forEach((f) => {
+    }
+    pendingFiles.forEach(f => {
         const div = document.createElement('div');
         div.className = 'selected-item';
-        div.textContent = f.name + ' (' + f.size + ' байт)';
+        div.textContent = `${f.name} (${f.size})`;
         selectedBox.appendChild(div);
-      });
-      selectedBox.style.display = 'block';
-    }
-
-    dropzone.addEventListener('click', () => fileInput.click());
-
-    fileInput.addEventListener('change', (e) => {
-      pendingFiles = [...pendingFiles, ...Array.from(e.target.files)];
-      renderSelected();
-      statusBox.textContent = '';
-      fileInput.value = '';
     });
+    selectedBox.style.display = 'block';
+}
 
-    dropzone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropzone.classList.add('dragover');
-    });
-    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-    dropzone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropzone.classList.remove('dragover');
-      if (e.dataTransfer.files && e.dataTransfer.files.length) {
+dropzone.addEventListener('click', () => fileInput.click());
+
+fileInput.addEventListener('change', e => {
+    pendingFiles = [...pendingFiles, ...Array.from(e.target.files)];
+    renderSelected();
+    statusBox.textContent = `Выбрано файлов: ${pendingFiles.length}`;
+});
+
+dropzone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropzone.classList.add('dragover');
+});
+dropzone.addEventListener('dragleave', () => {
+    dropzone.classList.remove('dragover');
+});
+dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    if (e.dataTransfer.files && e.dataTransfer.files.length) {
         pendingFiles = [...pendingFiles, ...Array.from(e.dataTransfer.files)];
         renderSelected();
-        statusBox.textContent = '';
-      }
-    });
+        statusBox.textContent = `Добавлено: ${e.dataTransfer.files.length}`;
+    }
+});
 
-    clearBtn.addEventListener('click', () => {
-      pendingFiles = [];
-      renderSelected();
-      statusBox.textContent = 'Очередь очищена.';
-    });
+clearBtn.addEventListener('click', () => {
+    pendingFiles = [];
+    fileInput.value = '';
+    renderSelected();
+    statusBox.textContent = '';
+});
 
-    document.getElementById('upload-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (!pendingFiles.length) {
-        statusBox.textContent = 'Нет файлов для загрузки.';
+document.getElementById('upload-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!pendingFiles.length) {
+        statusBox.textContent = 'Нет файлов для загрузки';
         return;
-      }
-      const formData = new FormData();
-      pendingFiles.forEach((f) => formData.append('files', f));
-      statusBox.textContent = 'Загружаем...';
-
-      try {
+    }
+    const formData = new FormData();
+    pendingFiles.forEach(f => formData.append('files', f));
+    statusBox.textContent = 'Загрузка...';
+    try {
         const resp = await fetch('/upload', { method: 'POST', body: formData });
-        if (!resp.ok) throw new Error('upload failed');
+        if (!resp.ok) throw new Error();
         const data = await resp.json();
-        statusBox.textContent = data.message || 'Готово.';
+        statusBox.textContent = data.message;
         pendingFiles = [];
         renderSelected();
         loadFileLists();
-      } catch (err) {
-        statusBox.textContent = 'Ошибка при загрузке.';
-      }
-    });
-
-    async function loadFileLists() {
-      try {
-        const resp = await fetch('/list');
-        if (!resp.ok) throw new Error();
-        const data = await resp.json();
-
-        renderList('root-files', 'root-empty', data.root || []);
-        renderList('upload-files', 'upload-empty', data.uploads || []);
-
-        if (data.extra_path) {
-          extraBlock.style.display = 'block';
-          extraPathLabel.textContent = data.extra_path;
-          renderList('extra-files', 'extra-empty', data.extra || []);
-        } else {
-          extraBlock.style.display = 'none';
-        }
-      } catch (e) {
-        statusBox.textContent = 'Не удалось получить список файлов.';
-      }
+    } catch (err) {
+        statusBox.textContent = 'Ошибка загрузки';
     }
+});
 
-    function renderList(listId, emptyId, items) {
-      const ul = document.getElementById(listId);
-      const empty = document.getElementById(emptyId);
-      ul.innerHTML = '';
-      if (!items.length) {
+function renderList(listId, emptyId, items) {
+    const ul = document.getElementById(listId);
+    const empty = document.getElementById(emptyId);
+    ul.innerHTML = '';
+    if (!items || !items.length) {
         empty.style.display = 'block';
         return;
-      }
-      empty.style.display = 'none';
-      items.forEach((f) => {
+    }
+    empty.style.display = 'none';
+    items.forEach(f => {
         const li = document.createElement('li');
         li.className = 'file-item';
         const a = document.createElement('a');
@@ -176,15 +148,54 @@
         a.textContent = f.name;
         const size = document.createElement('span');
         size.className = 'file-size';
-        size.textContent = f.size ? f.size + ' байт' : '';
+        size.textContent = f.size;
         li.appendChild(a);
         li.appendChild(size);
         ul.appendChild(li);
-      });
-    }
+    });
+}
 
-    loadFileLists();
-  </script>
+async function loadFileLists() {
+    try {
+        const resp = await fetch('/list');
+        if (!resp.ok) throw new Error();
+        const data = await resp.json();
+        renderList('root-files', 'root-empty', data.root);
+        renderList('upload-files', 'upload-empty', data.uploads);
+        if (data.extra && data.extra.length && data.extrapath) {
+            extraBlock.style.display = 'flex';
+            extraPathLabel.textContent = data.extrapath;
+            renderList('extra-files', 'extra-empty', data.extra);
+        } else {
+            extraBlock.style.display = 'none';
+        }
+        setTimeout(adjustHeights, 100);
+    } catch (e) {
+        statusBox.textContent = 'Ошибка загрузки списков';
+    }
+}
+
+function adjustHeights() {
+    const container = document.querySelector('.server-lists');
+    if (!container) return;
+    const lists = document.querySelectorAll('.file-list');
+    const extraVisible = extraBlock.style.display !== 'none';
+    const containerHeight = container.offsetHeight;
+    const threshold = extraVisible ? containerHeight / 3 : containerHeight / 2;
+    lists.forEach(list => {
+        if (list.scrollHeight > threshold) {
+            list.style.maxHeight = `${Math.floor(threshold)}px`;
+            list.style.overflowY = 'auto';
+        } else {
+            list.style.maxHeight = 'none';
+            list.style.overflowY = 'visible';
+        }
+    });
+}
+
+loadFileLists();
+window.addEventListener('resize', () => setTimeout(adjustHeights, 100));
+</script>
 </body>
 </html>
 
