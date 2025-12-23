@@ -112,7 +112,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(body)
             return
 
-        # скачивание из extra: /extra/...
         if self.path.startswith("/extra/") and self.extra_dir is not None:
             rel = self.path[len("/extra/"):]
             rel = urllib.parse.unquote(rel)
@@ -128,7 +127,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(f.read())
             return
 
-        # остальное – обычные файлы
         return http.server.SimpleHTTPRequestHandler.do_GET(self)
 
     def do_POST(self):

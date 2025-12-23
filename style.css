@@ -243,7 +243,6 @@ button {
     color: #9ca3af;
 }
 
-/* Скроллбар только для списков */
 .file-list::-webkit-scrollbar {
     width: 8px;
 }
@@ -259,7 +258,6 @@ button {
     background: #c41271;
 }
 
-/* Мобильная версия */
 @media (max-width: 800px) {
     .layout {
         flex-direction: column;

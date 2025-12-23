@@ -19,32 +19,31 @@
             <div class="server-block">
                 <h2>uploads</h2>
                 <ul id="upload-files" class="file-list"></ul>
-                <div class="empty" id="upload-empty" style="display:none;">Пусто</div>
+                <div class="empty" id="upload-empty" style="display:none;">Empty</div>
             </div>
 
             <div id="extra-block" class="server-block" style="display:none;">
                 <h2>Extra</h2>
                 <div class="extra-path" id="extra-path-label"></div>
                 <ul id="extra-files" class="file-list"></ul>
-                <div class="empty" id="extra-empty" style="display:none;">Пусто</div>
+                <div class="empty" id="extra-empty" style="display:none;">Empty</div>
             </div>
         </div>
     </div>
 
     <div class="col col-right">
         <div class="section-title"></div>
-        <h2>Загрузка</h2>
+        <h2>Upload</h2>
         <form id="upload-form" class="upload-form">
             <label id="dropzone" class="dropzone">
-                <div class="drop-main">Перетащите файлы сюда или кликните</div>
-                <div class="drop-sub">Поддерживается множественная загрузка</div>
+                <div class="drop-main">Drag files here</div>
                 <input id="file-input" class="file-input" type="file" multiple>
             </label>
             <div id="selected" class="selected-list" style="display:none;"></div>
             <div class="hint">.uploads/</div>
             <div class="actions">
-                <button type="button" class="btn btn-secondary" id="clear-btn">Очистить</button>
-                <button type="submit" class="btn btn-primary">Загрузить</button>
+                <button type="button" class="btn btn-secondary" id="clear-btn">Clear</button>
+                <button type="submit" class="btn btn-primary">Upload</button>
             </div>
             <div id="status" class="status"></div>
         </form>
@@ -82,7 +81,7 @@ dropzone.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', e => {
     pendingFiles = [...pendingFiles, ...Array.from(e.target.files)];
     renderSelected();
-    statusBox.textContent = `Выбрано файлов: ${pendingFiles.length}`;
+    statusBox.textContent = `Selected ${pendingFiles.length} file(s)`;
 });
 
 dropzone.addEventListener('dragover', e => {
@@ -112,12 +111,12 @@ clearBtn.addEventListener('click', () => {
 document.getElementById('upload-form').addEventListener('submit', async e => {
     e.preventDefault();
     if (!pendingFiles.length) {
-        statusBox.textContent = 'Нет файлов для загрузки';
+        statusBox.textContent = 'There is nothing to upload';
         return;
     }
     const formData = new FormData();
     pendingFiles.forEach(f => formData.append('files', f));
-    statusBox.textContent = 'Загрузка...';
+    statusBox.textContent = 'Uploading...';
     try {
         const resp = await fetch('/upload', { method: 'POST', body: formData });
         if (!resp.ok) throw new Error();
@@ -127,7 +126,7 @@ document.getElementById('upload-form').addEventListener('submit', async e => {
         renderSelected();
         loadFileLists();
     } catch (err) {
-        statusBox.textContent = 'Ошибка загрузки';
+        statusBox.textContent = 'Upload error';
     }
 });
 
@@ -171,7 +170,7 @@ async function loadFileLists() {
         }
         setTimeout(adjustHeights, 100);
     } catch (e) {
-        statusBox.textContent = 'Ошибка загрузки списков';
+        statusBox.textContent = 'Error';
     }
 }
 
