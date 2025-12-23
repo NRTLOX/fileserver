@@ -2,10 +2,10 @@
 Simple python fileserver with ui and some features
 
 ##install
-''' bash
+``` bash
 wget -qO- https://raw.githubusercontent.com/NRTLOX/fileserver/main/install.sh | bash
-'''
+```
 ##usage
-''' bash
+``` bash
 fileserver </path/to/extra/dir>
-'''
+```
