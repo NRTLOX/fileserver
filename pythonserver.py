@@ -90,7 +90,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if self.path == "/list":
             rootfiles = listdir(self.root, "/", self.root,
                                 extra_to_skip={"index.html", "style.css", "pythonserver.py"})
-            uploadfiles = listdir(self.uploaddir, "/uploads/", self.root)
+            uploadfiles = listdir(self.uploaddir, "/uploads/", self.uploaddir)
+
 
             extrafiles = []
             extrapathstr = None
